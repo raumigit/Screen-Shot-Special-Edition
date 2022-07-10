@@ -8,3 +8,4 @@ C:\Users\mahhi\Desktop\programing\C#\screenshot-Su\screenshot-Su\obj\Release\scr
 C:\Users\mahhi\Desktop\programing\C#\screenshot-Su\screenshot-Su\obj\Release\screenshot-Su.csproj.CoreCompileInputs.cache
 C:\Users\mahhi\Desktop\programing\C#\screenshot-Su\screenshot-Su\obj\Release\screenshot-Su.exe
 C:\Users\mahhi\Desktop\programing\C#\screenshot-Su\screenshot-Su\obj\Release\screenshot-Su.pdb
+C:\Users\mahhi\Desktop\programing\C#\screenshot-Su\screenshot-Su\obj\Release\screenshot_Su.PointerForm.resources
