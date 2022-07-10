@@ -9,6 +9,9 @@ screenshot-Su.exeを開くとすぐに使える状態にセットされます。
 左クリック：スクリーンをキャプチャ
 右クリック：スクリーンショット機能を停止
 
+## 現在のバージョン
+α 0.1
+https://github.com/raumigit/Screen-Shot-Special-Edition/releases/tag/%CE%B1-version
 
 ## リリースノート
 α：V0.1
