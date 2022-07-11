@@ -156,3 +156,4 @@ namespace HongliangSoft.Utilities.Gui {
 		}
 	}
 }
+//参考サイト：http://hongliang.seesaa.net/article/7651626.html　 Hongliang

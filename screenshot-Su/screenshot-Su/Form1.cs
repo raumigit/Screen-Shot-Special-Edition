@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -16,19 +17,20 @@ namespace screenshot_Su
 {
     public partial class Form1 : Form
     {
+        
+
         int ScreenShotX;
         int ScreenShotY;
-        int RangeWidth, RangeHeight;
-        //改良時に利用予定
-
+        int PictureWidth, PictureHeight;
+        string FileName;//スクショファイルの名前
         bool CaptureLock = false;
-
         DateTime nowTime;
-
+        private logger log = logger.GetInstance($@"log/SSSE-{DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")}.log", true);
         public Form1()
         {
             InitializeComponent();
         }
+        
 
         /// <summary>
         /// マウス座標を書き込むだけの処理
@@ -45,17 +47,33 @@ namespace screenshot_Su
 
         public void WHupdata()
         {
-            label9.Text = string.Format("X={0},Y={1}", RangeWidth, RangeHeight);
+            label9.Text = string.Format("X={0},Y={1}", PictureWidth, PictureHeight);
         }
-
+        /// <summary>
+        /// ロード用
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Form1_Load(object sender, EventArgs e)
         {
             DirectoryCheck();
+            label7.Text = "Ver:α1.0";
+            
 
-            RangeHeight = 128;
-            RangeWidth = 128;
-            label9.Text = string.Format("X={0},Y={1}", RangeWidth, RangeHeight);
+            StartPosition = FormStartPosition.Manual;
 
+            //iniから前回のフォーム位置、サイズ取得
+            var filePath = Path.Combine(Environment.CurrentDirectory, "Setting.ini");
+            Left = iniEngine.GetValueOrDefault(filePath, Name, nameof(Left), 256);
+            Top = iniEngine.GetValueOrDefault(filePath, Name, nameof(Top), 256);
+            Width = iniEngine.GetValueOrDefault(filePath, Name, nameof(Width), 570);
+            Height = iniEngine.GetValueOrDefault(filePath, Name, nameof(Height), 310);
+            PictureWidth = iniEngine.GetValueOrDefault(filePath, Name, nameof(PictureWidth), 128);
+            PictureHeight = iniEngine.GetValueOrDefault(filePath, Name, nameof(PictureHeight), 128);
+            FileName = iniEngine.GetValueOrDefault(filePath, Name, nameof(FileName), "Capture");
+
+
+            label9.Text = string.Format("X={0},Y={1}", PictureWidth, PictureHeight);
         }
 
         /// <summary>
@@ -69,25 +87,16 @@ namespace screenshot_Su
                 if (Directory.Exists(@"Capture") == false)
                     Directory.CreateDirectory("Capture");
             }
-            catch (Exception)
+            catch (Exception DirectoryErr)
             {
-                throw;
+                log.Error(DirectoryErr.Message);
+                log.Error(DirectoryErr.StackTrace);
+                log.Info("ディレクトリが作成できません。");
             }
 
         }
 
-        /// <summary>
-        /// マウス用のグローバルフック
-        /// 右クリックはキャプチャ停止/再開
-        /// 左クリックはキャプチャ
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void mouseHook1_MouseHooked(object sender, HongliangSoft.Utilities.Gui.MouseHookedEventArgs e)
-        {
-            
-
-        }
+        
 
         /// <summary>
         /// 1秒毎に時間を持ってきている
@@ -98,10 +107,11 @@ namespace screenshot_Su
         {
             nowTime = DateTime.Now;
             label5.Text = nowTime.ToString("yyyy-MM-dd|HH:mm:ss");
+            
         }
 
         /// <summary>
-        /// 右・左クリックの検知後のリセット用
+        /// 右・左クリックの検知後のラベルリセット用
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -111,20 +121,19 @@ namespace screenshot_Su
         }
 
         /// <summary>
-        /// スクリーンショットを実際に取るクラス
-        /// Bmp→Pngに変換している(アルファチャンネルについては未確認)
+        /// スクリーンショットを実際に取る処理
+        /// Bmp→Pngに変換
         /// </summary>
         public void ScreenCapture()
         {
             string saveimage;
             try
             {
-                //Bitmap bmp = new Bitmap(128,128);
                 int left, top, width, hight;
                 left = ScreenShotX;
                 top = ScreenShotY;
-                width = RangeWidth;
-                hight = RangeHeight;
+                width = PictureWidth;
+                hight = PictureHeight;
 
 
                 /*ここらへんに範囲でスクリーンショットを取る部分を実装予定*/
@@ -137,91 +146,83 @@ namespace screenshot_Su
                     }
                     saveimage = nowTime.ToString("yyyy-MM-dd-HH-mm-ss");
                     //PNG形式で保存する
-                    bmp.Save(string.Format(@"Capture/Capture{0}.png", saveimage, ImageFormat.Png));
+                    bmp.Save(string.Format(@"Capture/{0}{1}.png",FileName, saveimage, ImageFormat.Png));
                     bmp.Dispose();
                 }
             }
-            catch (Exception)
+            catch (Exception ImgSaveEx)
             {
-
-                throw;
+                log.Error(ImgSaveEx.Message);
+                log.Error(ImgSaveEx.StackTrace);
+                
             }
 
         }
 
         private void keyboardHook1_KeyboardHooked(object sender, KeyboardHookedEventArgs e)
         {
-
+           
             switch (e.KeyCode)
             {
-                case Keys.KeyCode:
-                    break;
-                case Keys.ShiftKey:
-                    break;
-                case Keys.ControlKey:
-                    break;
-                case Keys.Escape:
-                    break;
-                case Keys.End:
-                    break;
-                case Keys.Home:
-                    break;
+                case Keys.KeyCode: break;
+                case Keys.ShiftKey: break;
+                case Keys.ControlKey: break;
+                case Keys.Escape: break;
+                case Keys.End: break;
+                case Keys.Home: break;
+
                 case Keys.Left:
-                    RangeWidth--;
-                    WHupdata();
+                    if (PictureWidth >= 4)
+                    {
+                        PictureWidth -= 4;
+                        WHupdata();
+                    }
+                    else
+                    {
+                        log.Info("変数PictureWidthが下限値に達しました");
+                    }
                     break;
                 case Keys.Up:
-                    RangeHeight++;
+                    PictureHeight += 4;
                     WHupdata();
                     break;
                 case Keys.Right:
-                    RangeWidth++;
+                    PictureWidth += 4;
                     WHupdata();
                     break;
                 case Keys.Down:
-                    RangeHeight--;
-                    WHupdata();
+                    if (PictureHeight >= 4)
+                    {
+                        PictureHeight -= 4;
+                        WHupdata();
+                    }
+                    else
+                    {
+                        log.Info("変数PictureHeightが下限値に達しました");
+                    }
                     break;
-                case Keys.D0:
-                    break;
-                case Keys.D1:
-                    break;
-                case Keys.D2:
-                    break;
-                case Keys.D3:
-                    break;
-                case Keys.D4:
-                    break;
-                case Keys.D5:
-                    break;
-                case Keys.D6:
-                    break;
-                case Keys.D7:
-                    break;
-                case Keys.D8:
-                    break;
-                case Keys.D9:
-                    break;
-                case Keys.NumPad0:
-                    break;
-                case Keys.NumPad1:
-                    break;
-                case Keys.NumPad2:
-                    break;
-                case Keys.NumPad3:
-                    break;
-                case Keys.NumPad4:
-                    break;
-                case Keys.NumPad5:
-                    break;
-                case Keys.NumPad6:
-                    break;
-                case Keys.NumPad7:
-                    break;
-                case Keys.NumPad8:
-                    break;
-                case Keys.NumPad9:
-                    break;
+
+                case Keys.D0: break;
+                case Keys.D1: break;
+                case Keys.D2: break;
+                case Keys.D3: break;
+                case Keys.D4: break;
+                case Keys.D5: break;
+                case Keys.D6: break;
+                case Keys.D7: break;
+                case Keys.D8: break;
+                case Keys.D9: break;
+                case Keys.NumPad0: break;
+                case Keys.NumPad1: break;
+                case Keys.NumPad2: break;
+                case Keys.NumPad3: break;
+                case Keys.NumPad4: break;
+                case Keys.NumPad5: break;
+                case Keys.NumPad6: break;
+                case Keys.NumPad7: break;
+                case Keys.NumPad8: break;
+                case Keys.NumPad9: break;
+
                 case Keys.F1:
                     DownKey.Text = "F1";
                     break;
@@ -258,7 +259,6 @@ namespace screenshot_Su
                 case Keys.F12:
                     DownKey.Text = "F12";
                     break;
-                    break;
                 case Keys.Shift:
                     DownKey.Text = "Shift";
                     break;
@@ -268,25 +268,48 @@ namespace screenshot_Su
                 case Keys.Alt:
                     DownKey.Text = "Alt";
                     break;
+
                 default:
                     break;
             }
-
-
         }
-
-        public void KeyandMOuseHook(object sender, MouseHookedEventArgs m, KeyboardHookedEventArgs k)
+        /// <summary>
+        /// 沙花又フォントプロジェクトのリンク
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            if (k.UpDown == HongliangSoft.Utilities.Gui.KeyboardUpDown.Down)
+            System.Diagnostics.Process.Start("https://github.com/sakamata-ch/SakamataFontProject");
+            linkLabel1.LinkVisited = true;
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            //iniにフォーム位置、サイズ保存
+            var filePath = System.IO.Path.Combine(Environment.CurrentDirectory, "Setting.ini");
+            iniEngine.SetValue(filePath, Name, nameof(Left), Left.ToString());
+            iniEngine.SetValue(filePath, Name, nameof(Top), Top.ToString());
+            iniEngine.SetValue(filePath, Name, nameof(Width), Width.ToString());
+            iniEngine.SetValue(filePath, Name, nameof(Height), Height.ToString());
+            if (PictureHeight>=4&&PictureWidth>=4)
             {
-
-                
-
-
+                iniEngine.SetValue(filePath, Name, nameof(PictureWidth), PictureWidth.ToString());
+                iniEngine.SetValue(filePath, Name, nameof(PictureHeight), PictureHeight.ToString());
             }
+            
+            iniEngine.SetValue(filePath, Name, nameof(FileName), FileName);
         }
 
 
+
+        /// <summary>
+        /// マウス用のグローバルフック
+        /// 右クリックはキャプチャ停止/再開
+        /// 左クリックはキャプチャ
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void mouseHook1_MouseHooked_1(object sender, MouseHookedEventArgs e)
         {
             if (e.Message == HongliangSoft.Utilities.Gui.MouseMessage.LDown && CaptureLock == false)
@@ -301,12 +324,14 @@ namespace screenshot_Su
                 {
                     case true:
                         CaptureLock = false;
-                        label4.Text = "--";
+                        label4.ForeColor = Color.GreenYellow;
+                        label4.Text = "動作中";
                         break;
 
                     case false:
                         CaptureLock = true;
                         label4.Text = "スクリーンショットがロック中";
+                        label4.ForeColor = Color.Black;
                         break;
 
 
