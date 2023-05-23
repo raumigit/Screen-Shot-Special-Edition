@@ -57,7 +57,7 @@ namespace screenshot_Su
         private void Form1_Load(object sender, EventArgs e)
         {
             DirectoryCheck();
-            label7.Text = "Ver:α1.0";
+            label7.Text = "Ver:α0.1.0";
             
 
             StartPosition = FormStartPosition.Manual;
@@ -340,6 +340,9 @@ namespace screenshot_Su
                 }
             }
         }
+        /*
+        α0.1.2でAlt+Pをデフォルトに設定
+        */
     }
 }
 
